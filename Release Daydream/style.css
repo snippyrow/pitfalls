@@ -1,0 +1,18 @@
+/* Make the canvas cover the whole page with no scrollbars */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+canvas {
+    display: block; /* removes inline gap */
+    width: 100vw;
+    height: 100vh;
+}
+/* Optional: dark background while canvas is loading */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: #079425;
+    z-index: -1;
+}
