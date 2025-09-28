@@ -93,3 +93,12 @@ class PhysicsBlock {
     }
 }
 
+class Orb {
+    constructor(varName, pos_x, pos_y, sprite) {
+        this.Name = varName;
+        this.x = pos_x;
+        this.y = pos_y;
+        this.sprite = sprite;
+        this.animation = {speed: 15, frames: [{x: 0, y: 0}, {x:256, y: 0}, {x: 512, y: 0}, {x: 0, y: 256}, {x: 256, y: 256}]};
+    }
+}

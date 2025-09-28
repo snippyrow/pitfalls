@@ -53,6 +53,8 @@ var hole;
 var dead = false;
 var plrSprite;
 var cloneNum = 0;
+var orb;
+var win = false;
 
 var holes = []; // populate with x and y
 
@@ -115,6 +117,11 @@ function draw() {
             let posX = -x * 64;
             let posY = -y * 64;
 
+
+            if (Math.random() < 0.000003) {
+                gameFolder.push(new Orb("Ball",posX, posY, orb));
+            }
+
             if (!holes.some(c => c.x === posX && c.y === posY)) {
                 // Distance from origin
                 let dist = Math.sqrt(posX * posX + posY * posY);
@@ -131,7 +138,7 @@ function draw() {
                     });
 
                     if (!tooClose) {
-                        holes.push({ x: posX, y: posY });
+                        holes.push({ x: posX, y: posY })
                         gameFolder.push(new PhysicsBlock("Hole", posX, posY, 256, 256, hole));
                     }
                 }
@@ -179,6 +186,43 @@ for (let o = 0; o < gameFolder.length; o++) {
                     const dist = Math.sqrt(((clone.x - 75) - object.x) ** 2 + ((clone.y - 75) - object.y) ** 2);
                     if (dist < 64) {
                        clone.dead = true;
+                       gameFolder.splice(o, 1);
+                    }
+                }
+            }
+        }
+    } else if (object instanceof Orb) {
+        if (object.sprite.asset.ready) {
+
+
+            // Hole center in world space
+            const holeX = object.x + 128; 
+            const holeY = object.y + 128; 
+
+            // Player in world space
+            const plrX = -coords.x + (w / 2);  
+            const plrY = -coords.y + (h / 2);  
+
+            // Convert both to screen space for drawing circles
+            //drawCircle(ctx, holeX + coords.x, holeY + coords.y, 64, "red"); 
+            //drawCircle(ctx, plrX + coords.x + (w / 2), plrY + coords.y + (h / 2), 16, "green");
+
+            // Collision check in world space
+            const dist = Math.sqrt((plrX - holeX) ** 2 + (plrY - holeY) ** 2);
+            if (dist < 64) {
+                win = true;
+                setTimeout(re, 3000);
+            }
+
+            // Kill any clones near the hole
+            var clone;
+            for (let c = 0; c < gameFolder.length; c++) {
+                clone = gameFolder[c];
+                if (clone instanceof PlayerClone) {
+                    // Collision check in world space
+                    const dist = Math.sqrt(((clone.x - 75) - object.x) ** 2 + ((clone.y - 75) - object.y) ** 2);
+                    if (dist < 64) {
+                       win = true;
                        gameFolder.splice(o, 1);
                     }
                 }
@@ -256,6 +300,10 @@ for (let o = 0; o < gameFolder.length; o++) {
                     }
                 }
             }
+        } else if (object instanceof Orb) {
+            var frame_id = Math.round(dt / 5) % object.animation.frames.length;
+            var frame = object.animation.frames[frame_id];
+            ctx.drawImage(object.sprite.asset.image, frame.x, frame.y, 256, 256, object.x + coords.x, object.y + coords.y, 256, 256);
         } else if (object instanceof PlayerClone) {
             if (object.dead) {
                 var frame_id = Math.round(dt / 5) % object.animation_dead.frames.length;
@@ -304,7 +352,7 @@ for (let o = 0; o < gameFolder.length; o++) {
     }
 
     dt++;
-    findObject("FrameCounter", TextLabel).Text = `${cloneNum.toString()} clone(s) left. Walk to get more.`;
+    findObject("FrameCounter", TextLabel).Text = `${cloneNum.toString()} clone(s) left. Walk to get more, press <space> to summon.`;
     if (dead) {
         ctx.fillStyle = "rgba(0,0,0," + alpha + ")";
         ctx.fillRect(0, 0, w, h);
@@ -316,6 +364,17 @@ for (let o = 0; o < gameFolder.length; o++) {
         ctx.fillText("Wasted.", w / 2, h / 2);
         alpha+=0.01;
     }
+    if (win) {
+        ctx.fillStyle = "rgba(0,0,0," + alpha + ")";
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.font = "100px Pricedown, sans-serif";
+        ctx.fillStyle = "rgba(0,255,0," + alpha + ")";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("You win!", w / 2, h / 2);
+        alpha+=0.01;
+    }
     requestAnimationFrame(draw);
 }
 
@@ -324,11 +383,14 @@ for (let o = 0; o < gameFolder.length; o++) {
 function init() {
     gameFolder.push(new TextLabel("FrameCounter", 50, 60, "0", new Color3(255, 255, 255), 30));
     var playerAsset = loadImage("Assets/sprites_all.png");
+    var orbAsset = loadImage("Assets/orbs.webp");
+    var orbSprite = new SpriteMask("Orb", orbAsset, 200, 200, 200, 200, 0);
     var holeAsset = loadImage("Assets/hole.png");
     var playerSprite = new SpriteMask("PlayerSpritesheet", playerAsset, 100, 100, 200, 200, 0);
     plrSprite = playerSprite;
     var holeSprite = new SpriteMask("Hole", holeAsset, 200, 200, 200, 200, 0);
     hole = holeSprite;
+    orb = orbSprite;
     //gameFolder.push(playerSprite);
     var player = new Player("PlayerMain", 0, 0, playerSprite);
     var physicsHole = new PhysicsBlock("Hole", 100,100,256,256,hole);
